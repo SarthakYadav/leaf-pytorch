@@ -18,3 +18,12 @@ def gabor_impulse_response(t, center, fwhm):
 def gabor_filters(kernel, size: int = 401):
     t = torch.arange(-(size // 2), (size + 1) // 2, dtype=torch.float)
     return gabor_impulse_response(t, center=kernel[:, 0], fwhm=kernel[:, 1])
+
+
+def gaussian_lowpass(sigma, filter_size: int):
+    sigma = torch.clamp(sigma, min=(2. / filter_size), max=0.5)
+    t = torch.range(0, filter_size).float()
+    t = torch.reshape(t, (1, filter_size, 1, 1))
+    numerator = t - 0.5 * (filter_size - 1)
+    denominator = sigma * 0.5 * (filter_size - 1)
+    return torch.exp(-0.5 * (numerator / denominator) ** 2)
