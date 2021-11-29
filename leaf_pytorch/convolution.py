@@ -4,6 +4,7 @@ from typing import Tuple, Callable
 from torch import nn
 from leaf_pytorch.initializers import GaborInit
 from leaf_pytorch.impulse_responses import gabor_filters
+from leaf_pytorch.utils import get_padding_value
 
 
 class GaborConstraint(nn.Module):
@@ -19,14 +20,6 @@ class GaborConstraint(nn.Module):
         clipped_mu = torch.clamp(kernel_data[:, 0], mu_lower, mu_upper).unsqueeze(1)
         clipped_sigma = torch.clamp(kernel_data[:, 1], sigma_lower, sigma_upper).unsqueeze(1)
         return torch.cat([clipped_mu, clipped_sigma], dim=-1)
-
-
-def get_padding_value(kernel_size):
-    kernel_sizes = (kernel_size,)
-    from functools import reduce
-    from operator import __add__
-    conv_padding = reduce(__add__, [(k // 2 + (k - 2 * (k // 2)) - 1, k // 2) for k in kernel_sizes[::-1]])
-    return conv_padding
 
 
 class GaborConv1d(nn.Module):
@@ -74,7 +67,6 @@ class GaborConv1d(nn.Module):
         stacked_filters = torch.reshape(stacked_filters, (2 * self._filters, self._kernel_size))
         stacked_filters = stacked_filters.unsqueeze(1)
 
-        kernel_sizes = (3,)
         if self._padding.lower() == "same":
             x = nn.functional.pad(x, self._pad_value, mode='constant', value=0)
             pad_val = 0

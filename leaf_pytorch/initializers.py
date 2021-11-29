@@ -18,7 +18,7 @@ class GaborInit:
             return gabor_filters.gabor_params_from_mels
         else:
             # only needed in case of > 2-dim weights
-            even_indices = torch.range(start=0, end=shape[2], step=2)
-            odd_indices = torch.range(start=1, end=shape[2], step=2)
+            even_indices = torch.arange(start=0, end=shape[2], step=2)
+            odd_indices = torch.arange(start=1, end=shape[2], step=2)
             filters = gabor_filters.gabor_filters
             raise NotImplementedError("implementation incomplete. Use even valued number of filters")

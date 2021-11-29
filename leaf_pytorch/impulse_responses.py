@@ -21,9 +21,13 @@ def gabor_filters(kernel, size: int = 401):
 
 
 def gaussian_lowpass(sigma, filter_size: int):
+    print("in gaussian_lowpass, sigma.shape", sigma.shape)
     sigma = torch.clamp(sigma, min=(2. / filter_size), max=0.5)
-    t = torch.range(0, filter_size).float()
+    t = torch.arange(0, filter_size).float()
     t = torch.reshape(t, (1, filter_size, 1, 1))
+    print("in gaussian_lowpass, t.shape", t.shape)
     numerator = t - 0.5 * (filter_size - 1)
+    print("in gaussian_lowpass, numerator.shape", numerator.shape)
     denominator = sigma * 0.5 * (filter_size - 1)
+    print("in gaussian_lowpass, denominator.shape", denominator.shape)
     return torch.exp(-0.5 * (numerator / denominator) ** 2)
