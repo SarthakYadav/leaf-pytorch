@@ -15,8 +15,8 @@ class GaborConstraint(nn.Module):
     def forward(self, kernel_data):
         mu_lower = 0.
         mu_upper = math.pi
-        sigma_lower = 4 * torch.sqrt(2 * torch.log(torch.tensor(2))) / math.pi
-        sigma_upper = self._kernel_size * torch.sqrt(2 * torch.log(torch.tensor(2))) / math.pi
+        sigma_lower = 4 * torch.sqrt(2. * torch.log(torch.tensor(2., device=kernel_data.device))) / math.pi
+        sigma_upper = self._kernel_size * torch.sqrt(2. * torch.log(torch.tensor(2., device=kernel_data.device))) / math.pi
         clipped_mu = torch.clamp(kernel_data[:, 0], mu_lower, mu_upper).unsqueeze(1)
         clipped_sigma = torch.clamp(kernel_data[:, 1], sigma_lower, sigma_upper).unsqueeze(1)
         return torch.cat([clipped_mu, clipped_sigma], dim=-1)
@@ -62,10 +62,11 @@ class GaborConv1d(nn.Module):
         filters = gabor_filters(kernel, self._kernel_size)
         real_filters = filters.real
         img_filters = filters.imag
+        print("filters done to complex")
         stacked_filters = torch.cat([real_filters.unsqueeze(1), img_filters.unsqueeze(1)], dim=1)
         stacked_filters = torch.reshape(stacked_filters, (2 * self._filters, self._kernel_size))
         stacked_filters = stacked_filters.unsqueeze(1)
-
+        print("stacked_filters done")
         if self._padding.lower() == "same":
             x = nn.functional.pad(x, self._pad_value, mode='constant', value=0)
             pad_val = 0

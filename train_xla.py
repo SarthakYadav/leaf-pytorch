@@ -73,7 +73,7 @@ parser.add_argument("--val_clip_size", type=float, default=5)
 parser.add_argument("--use_mixers", action="store_true")
 parser.add_argument("--use_mixup", action="store_true")
 parser.add_argument("--prefetch_factor", type=int, default=4)
-parser.add_argument("--devices", type=int, default=1)
+parser.add_argument("--tpus", type=int, default=1)
 parser.add_argument("--log_steps", default=10, type=int)
 parser.add_argument("--no_wandb", action="store_true")
 parser.add_argument("--high_aug", action="store_true")
@@ -162,7 +162,7 @@ def train(ARGS):
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
     val_device_loader = pl.MpDeviceLoader(val_loader, device)
     num_steps_per_epoch = len(train_loader)
-    optimizer, scheduler, scheduler_name = optimization_helper(model.parameters(), cfg, ARGS.devices,
+    optimizer, scheduler, scheduler_name = optimization_helper(model.parameters(), cfg, ARGS.tpus,
                                                                reduce_on_plateau_mode="max",
                                                                num_tr_steps_per_epoch=num_steps_per_epoch,
                                                                num_epochs=ARGS.epochs)
@@ -221,6 +221,7 @@ def train(ARGS):
 
         for batch in train_device_loader:
             x, _, y = batch
+            print(y)
             if mixup_enabled:
                 if mode == "multilabel":
                     x, y, _, _ = do_mixup(x, y, mode=mode)

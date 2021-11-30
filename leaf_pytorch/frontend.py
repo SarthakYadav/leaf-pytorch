@@ -14,7 +14,7 @@ class SquaredModulus(nn.Module):
 
     def forward(self, x):
         x = x.transpose(1, 2)
-        output = 2 * self._pool(x ** 2)
+        output = 2 * self._pool(x ** 2.)
         output = output.transpose(1, 2)
         return output
 
@@ -76,7 +76,7 @@ class Leaf(nn.Module):
         outputs = self._complex_conv(x)
         outputs = self._activation(outputs)
         outputs = self._pooling(outputs)
-        outputs = torch.maximum(outputs, self._maximum_val)
+        outputs = torch.maximum(outputs, torch.tensor(1e-5, device=outputs.device))
         if self._compression:
             outputs = self._compression(outputs)
         if self._instance_norm is not None:
