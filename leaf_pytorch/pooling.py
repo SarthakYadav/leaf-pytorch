@@ -25,7 +25,6 @@ class GaussianLowPass(nn.Module):
 
         if self.padding.lower() == "same":
             self.pad_value = get_padding_value(kernel_size)
-            print("self._padding", self.padding)
         else:
             self.pad_value = self.padding
 

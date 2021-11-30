@@ -47,7 +47,6 @@ class GaborConv1d(nn.Module):
         self._kernel = nn.Parameter(init_weights)
         if self._padding.lower() == "same":
             self._pad_value = get_padding_value(self._kernel_size)
-            print("self._padding", self._padding)
         else:
             self._pad_value = self._padding
         if self._use_bias:
