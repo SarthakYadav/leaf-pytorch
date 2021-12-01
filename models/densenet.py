@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from torchvision.models.utils import load_state_dict_from_url
+# from torchvision.models.utils import load_state_dict_from_url
 from torch import Tensor
 from typing import Any, List, Tuple
 
@@ -221,37 +221,37 @@ class DenseNet(nn.Module):
         return out
 
 
-def _load_state_dict(model: nn.Module, model_url: str, progress: bool) -> None:
-    # '.'s are no longer allowed in module names, but previous _DenseLayer
-    # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
-    # They are also in the checkpoints in model_urls. This pattern is used
-    # to find such keys.
-    pattern = re.compile(
-        r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
+# def _load_state_dict(model: nn.Module, model_url: str, progress: bool) -> None:
+#     # '.'s are no longer allowed in module names, but previous _DenseLayer
+#     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
+#     # They are also in the checkpoints in model_urls. This pattern is used
+#     # to find such keys.
+#     pattern = re.compile(
+#         r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
+#
+#     state_dict = load_state_dict_from_url(model_url, progress=progress)
+#     for key in list(state_dict.keys()):
+#         res = pattern.match(key)
+#         if res:
+#             new_key = res.group(1) + res.group(2)
+#             state_dict[new_key] = state_dict[key]
+#             del state_dict[key]
+#     model.load_state_dict(state_dict)
 
-    state_dict = load_state_dict_from_url(model_url, progress=progress)
-    for key in list(state_dict.keys()):
-        res = pattern.match(key)
-        if res:
-            new_key = res.group(1) + res.group(2)
-            state_dict[new_key] = state_dict[key]
-            del state_dict[key]
-    model.load_state_dict(state_dict)
 
-
-def _densenet(
-    arch: str,
-    growth_rate: int,
-    block_config: Tuple[int, int, int, int],
-    num_init_features: int,
-    pretrained: bool,
-    progress: bool,
-    **kwargs: Any
-) -> DenseNet:
-    model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
-    if pretrained:
-        _load_state_dict(model, model_urls[arch], progress)
-    return model
+# def _densenet(
+#     arch: str,
+#     growth_rate: int,
+#     block_config: Tuple[int, int, int, int],
+#     num_init_features: int,
+#     pretrained: bool,
+#     progress: bool,
+#     **kwargs: Any
+# ) -> DenseNet:
+#     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
+#     if pretrained:
+#         _load_state_dict(model, model_urls[arch], progress)
+#     return model
 
 
 def densenet121(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
