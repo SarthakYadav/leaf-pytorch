@@ -60,8 +60,8 @@ class PCENLayer(nn.Module):
             raise ValueError("SimpleRNN based ema not implemented.")
 
     def forward(self, x):
-        alpha = torch.min(self.alpha, torch.tensor(1.0))
-        root = torch.max(self.root, torch.tensor(1.0))
+        alpha = torch.min(self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device))
+        root = torch.max(self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device))
         ema_smoother = self.ema(x)
         one_over_root = 1. / root
         output = ((x / (self._floor + ema_smoother) ** alpha.view(1, -1, 1) + self.delta.view(1, -1, 1))
