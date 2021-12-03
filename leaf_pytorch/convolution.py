@@ -70,7 +70,6 @@ class GaborConv1d(nn.Module):
         stacked_filters = torch.cat([real_filters.unsqueeze(1), img_filters.unsqueeze(1)], dim=1)
         stacked_filters = torch.reshape(stacked_filters, (2 * self._filters, self._kernel_size))
         stacked_filters = stacked_filters.unsqueeze(1)
-        print("stacked_filters done")
         if self._padding.lower() == "same":
             x = nn.functional.pad(x, self._pad_value, mode='constant', value=0)
             pad_val = 0
