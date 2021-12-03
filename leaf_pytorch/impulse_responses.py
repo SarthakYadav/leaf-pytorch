@@ -8,7 +8,8 @@ def gabor_impulse_response(t, center, fwhm):
     center_frequency_complex = center.type(torch.complex64)
     t_complex = t.type(torch.complex64)
     sinusoid = torch.exp(
-        torch.complex(torch.tensor(0.), torch.tensor(1.)) * torch.tensordot(center_frequency_complex.unsqueeze(1), t_complex.unsqueeze(0), dims=1)
+        torch.complex(torch.tensor(0.), torch.tensor(1.))
+        * torch.tensordot(center_frequency_complex.unsqueeze(1), t_complex.unsqueeze(0), dims=1)
     )
     denominator = denominator.type(torch.complex64).unsqueeze(1)
     gaussian = gaussian.type(torch.complex64)

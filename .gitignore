@@ -9,6 +9,9 @@ __pycache__/
 # Development
 .idea/
 
+# training and logs
+wandb/
+
 
 # Distribution / packaging
 .Python

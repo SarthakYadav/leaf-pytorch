@@ -60,9 +60,13 @@ class GaborConv1d(nn.Module):
         if self._sort_filters:
             raise NotImplementedError("sort filter functionality not yet implemented")
         filters = gabor_filters(kernel, self._kernel_size)
-        real_filters = filters.real
-        img_filters = filters.imag
-        print("filters done to complex")
+        temp = torch.view_as_real(filters)
+        real_filters = temp[:, :, 0]
+        img_filters = temp[:, :, 1]
+        # img_filters = filters.imag
+        # print(real_filters.shape)
+        # print(img_filters.shape)
+        # print(torch.view_as_real(filters).shape)
         stacked_filters = torch.cat([real_filters.unsqueeze(1), img_filters.unsqueeze(1)], dim=1)
         stacked_filters = torch.reshape(stacked_filters, (2 * self._filters, self._kernel_size))
         stacked_filters = stacked_filters.unsqueeze(1)
