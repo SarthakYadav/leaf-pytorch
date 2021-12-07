@@ -77,7 +77,7 @@ parser.add_argument("--tpus", type=int, default=1)
 parser.add_argument("--log_steps", default=10, type=int)
 parser.add_argument("--no_wandb", action="store_true")
 parser.add_argument("--high_aug", action="store_true")
-parser.add_argument("--wandb_project", type=str, default="pgr-thesis-contrastive-baseline")
+parser.add_argument("--wandb_project", type=str, default="leaf-pytorch")
 parser.add_argument("--wandb_group", type=str, default="dataset")
 parser.add_argument("--labels_delimiter", type=str, default=",")
 parser.add_argument("--wandb_watch_model", action="store_true")
@@ -221,7 +221,7 @@ def train(ARGS):
 
         for batch in train_device_loader:
             x, _, y = batch
-            print(y)
+            # print(y)
             if mixup_enabled:
                 if mode == "multilabel":
                     x, y, _, _ = do_mixup(x, y, mode=mode)
