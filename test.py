@@ -65,7 +65,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     hparams_path = os.path.join(args.exp_dir, "hparams.pickle")
     ckpts = sorted(glob.glob(os.path.join(args.exp_dir, "ckpts", "*")), key=get_val_acc)
-    print(ckpts)
+    # print(ckpts)
     ckpt_path = ckpts[-1]
     print(ckpt_path)
     checkpoint = torch.load(ckpt_path)
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     device = torch.device(f"cuda:{args.gpu_id}")
     print(model.load_state_dict(checkpoint['model_state_dict']))
     model = model.to(device).eval()
-    print(model)
+    # print(model)
     ac = hparams.cfg['audio_config']
     print(ac)
     # val_clip_size = int(ac['val_clip_size'] * ac['sample_rate'])
