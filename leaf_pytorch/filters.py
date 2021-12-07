@@ -25,10 +25,9 @@ class GaborFilter():
         self.n_fft = n_fft
         self.normalize_energy = normalize_energy
 
-    @property
     def gabor_params_from_mels(self):
         coeff = torch.sqrt(2. * torch.log(torch.tensor(2.))) * self.n_fft
-        sqrt_filters = torch.sqrt(self.mel_filters)
+        sqrt_filters = torch.sqrt(self.mel_filters())
         center_frequencies = torch.argmax(sqrt_filters, dim=1)
         peaks, _ = torch.max(sqrt_filters, dim=1, keepdim=True)
         half_magnitudes = peaks / 2.
@@ -44,7 +43,7 @@ class GaborFilter():
         peaks, _ = torch.max(filters, dim=1, keepdim=True)
         return peaks * (torch.sum((filters > 0).float(), dim=1, keepdim=True) + 2) * np.pi / self.n_fft
 
-    @property
+
     def mel_filters(self):
         mel_filters = torchaudio.functional.create_fb_matrix(
             n_freqs=self.n_fft // 2 + 1,
@@ -58,7 +57,6 @@ class GaborFilter():
             mel_filters = mel_filters / self._mel_filters_areas(mel_filters)
         return mel_filters
 
-    @property
     def gabor_filters(self):
         gabor_filters = impulse_responses.gabor_filters(self.gabor_params_from_mels, size=self.window_len)
         output = gabor_filters * torch.sqrt(

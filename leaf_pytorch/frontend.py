@@ -31,6 +31,7 @@ class Leaf(nn.Module):
             init_max_freq = 7800.0,
             mean_var_norm: bool = False,
             pcen_compression: bool = True,
+            use_legacy_complex=False
     ):
         super(Leaf, self).__init__()
         window_size = int(sample_rate * window_len // 1000 + 1)
@@ -48,7 +49,8 @@ class Leaf(nn.Module):
             initializer=initializers.GaborInit(
                 default_window_len=window_size, sample_rate=sample_rate,
                 min_freq=init_min_freq, max_freq=init_max_freq
-            )
+            ),
+            use_legacy_complex=use_legacy_complex
         )
         self._activation = SquaredModulus()
         self._pooling = pooling.GaussianLowPass(n_filters, kernel_size=window_size,

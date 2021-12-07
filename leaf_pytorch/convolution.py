@@ -27,7 +27,8 @@ class GaborConv1d(nn.Module):
                  strides, padding,
                  initializer,
                  use_bias=False,
-                 sort_filters=False):
+                 sort_filters=False,
+                 use_legacy_complex=False):
         super(GaborConv1d, self).__init__()
         self._filters = filters // 2
         self._kernel_size = kernel_size
@@ -53,16 +54,23 @@ class GaborConv1d(nn.Module):
             self._bias = torch.nn.Parameter(torch.ones(self._filters*2,))
         else:
             self._bias = None
+        self.use_legacy_complex = use_legacy_complex
+        if self.use_legacy_complex:
+            print("ATTENTION: Using legacy_complex format for gabor filter estimation.")
 
     def forward(self, x):
         # apply Gabor constraint
         kernel = self.constraint(self._kernel)
         if self._sort_filters:
             raise NotImplementedError("sort filter functionality not yet implemented")
-        filters = gabor_filters(kernel, self._kernel_size)
-        temp = torch.view_as_real(filters)
-        real_filters = temp[:, :, 0]
-        img_filters = temp[:, :, 1]
+        filters = gabor_filters(kernel, self._kernel_size, legacy_complex=self.use_legacy_complex)
+        if not self.use_legacy_complex:
+            temp = torch.view_as_real(filters)
+            real_filters = temp[:, :, 0]
+            img_filters = temp[:, :, 1]
+        else:
+            real_filters = filters[:, :, 0]
+            img_filters = filters[:, :, 1]
         # img_filters = filters.imag
         # print(real_filters.shape)
         # print(img_filters.shape)

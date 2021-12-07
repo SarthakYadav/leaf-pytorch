@@ -15,10 +15,10 @@ class GaborInit:
         window_len = self.def_win_len if len(shape) == 2 else shape[0]
         gabor_filters = GaborFilter(n_filters=n_filters, window_len=window_len, **self._kwargs)
         if len(shape) == 2:
-            return gabor_filters.gabor_params_from_mels
+            return gabor_filters.gabor_params_from_mels()
         else:
             # only needed in case of > 2-dim weights
-            even_indices = torch.arange(start=0, end=shape[2], step=2)
-            odd_indices = torch.arange(start=1, end=shape[2], step=2)
-            filters = gabor_filters.gabor_filters
-            raise NotImplementedError("implementation incomplete. Use even valued number of filters")
+            # even_indices = torch.arange(start=0, end=shape[2], step=2)
+            # odd_indices = torch.arange(start=1, end=shape[2], step=2)
+            # filters = gabor_filters.gabor_filters()
+            raise NotImplementedError("implementation incomplete. Use even valued filter dimensions")
