@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Yadav
+    given-names: Sarthak
+    orcid: https://orcid.org/0000-0002-1979-9460
+title: "leaf-pytorch"
+version: 0.0.1
+date-released: 2021-12-07
