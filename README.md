@@ -13,8 +13,7 @@ This work would not be possible without cloud resources provided by Google's [TP
 
 ## About
 
-This is a PyTorch implementation of the [LEAF audio frontend](https://openreview.net/pdf?id=jM76BCb6F9m) [1],  
-Made using the [official tensorflow implementation](https://github.com/google-research/leaf-audio) as a direct reference.  
+This is a PyTorch implementation of the [LEAF audio frontend](https://openreview.net/pdf?id=jM76BCb6F9m) [1], made using the [official tensorflow implementation](https://github.com/google-research/leaf-audio) as a direct reference.  
 This implementation supports training on TPUs using `torch-xla`.
 
 ## Key Points
@@ -23,6 +22,7 @@ This implementation supports training on TPUs using `torch-xla`.
 * Currently, `torch-xla` has some issues with certain `complex64` operations: `torch.view_as_real(comp)`, `comp.real`, `comp.imag` as highlighted in [#Issue 3070](https://github.com/pytorch/xla/issues/3070). 
 These are used primarily for generating gabor impulse responses. To bypass this shortcoming, an alternate implementation using manual complex number operations is provided.
 * Matched performance on SpeechCommands, experiments on other datasets ongoing
+* More details for commands to replicate experiments will be added shortly
 
 
 ## Dependencies
