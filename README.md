@@ -23,9 +23,11 @@ This implementation supports training on TPUs using `torch-xla`.
 These are used primarily for generating gabor impulse responses. To bypass this shortcoming, an alternate implementation using manual complex number operations is provided.
 * Matched performance on SpeechCommands, experiments on other datasets ongoing
 * More details for commands to replicate experiments will be added shortly
-
+* Default parameters of `LEAF` are the most thoroughly tested. Will test/add other configurations over time.
+* Haven't added `SincNet`, `SincNet+` implementations are not done yet. Might add them in the future depending on availability
 
 ## Dependencies
+
 ```
 torch >= 1.9.0
 torchaudio >= 0.9.0
@@ -40,11 +42,11 @@ Additional dependencies include
 ```
 
 ## Results
+
 | Model | Dataset | features | Official | This repo | weights |
 | ----- | ----- | ----- | ----- | ----- | ----- |
 |       |       |       |       |       |       |
 | EfficientNet-b0 | SpeechCommands | LEAF | 93.4±0.3 | 94.52±0.4 | [ckpt](https://drive.google.com/file/d/1E9ZsR4TqGXLdl0mqOFUV7H0qelOCDCVI/view?usp=sharing) 
-
 
 
 # References
