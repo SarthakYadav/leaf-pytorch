@@ -24,7 +24,7 @@ These are used primarily for generating gabor impulse responses. To bypass this 
 * Matched performance on SpeechCommands, experiments on other datasets ongoing
 * More details for commands to replicate experiments will be added shortly
 * Default parameters of `LEAF` are the most thoroughly tested. Will test/add other configurations over time.
-* Haven't added `SincNet`, `SincNet+` implementations are not done yet. Might add them in the future depending on availability
+* Haven't added `SincNet`, `SincNet+` implementations yet. Might add them in the future depending on availability/bandwidth
 
 ## Dependencies
 
