@@ -5,6 +5,7 @@
 - [Key Points](#key-points) 
 - [Dependencies](#dependencies) 
 - [Results](#results) 
+- [Loading Pretrained Models](#loading-pretrained-models)
 - [References](#references)
 
 ## Sponsors
@@ -23,11 +24,9 @@ This implementation supports training on TPUs using `torch-xla`.
 These are used primarily for generating gabor impulse responses. To bypass this shortcoming, an alternate implementation using manual complex number operations is provided.
 * Matched performance on SpeechCommands, experiments on other datasets ongoing
 * More details for commands to replicate experiments will be added shortly
-* Default parameters of `LEAF` are the most thoroughly tested. Will test/add other configurations over time.
-* Haven't added `SincNet`, `SincNet+` implementations yet. Might add them in the future depending on availability/bandwidth
+
 
 ## Dependencies
-
 ```
 torch >= 1.9.0
 torchaudio >= 0.9.0
@@ -42,12 +41,35 @@ Additional dependencies include
 ```
 
 ## Results
+| Model | Dataset | Metric | features | Official | This repo | weights |
+| ----- | ----- | ----- | ----- | ----- | ----- | ----- |
+|       |       |       |       |       |       |       |
+| EfficientNet-b0 | SpeechCommands | Accuracy | LEAF | 93.4±0.3 | 94.5±0.4 | [ckpt](https://drive.google.com/drive/folders/1bPQGE23boXXNkCr2AtDMi8xoZRElpZUK?usp=sharing) 
+| EfficientNet-b0 | VoxCeleb1 | Accuracy | LEAF | 33.1±0.7 | 40.9±1.8 | [ckpt](https://drive.google.com/drive/folders/1J4dn6QskJ4YicbCJdti680abIxaAQqTN?usp=sharing)
+| ResNet-18 | VoxCeleb1 | Accuracy | LEAF | N/A | 44.7±2.9 | [ckpt](https://drive.google.com/drive/folders/1pWBKaWVDNaI8NusiML91UPHdxTgzP8sd?usp=sharing)
 
-| Model | Dataset | features | Official | This repo | weights |
-| ----- | ----- | ----- | ----- | ----- | ----- |
-|       |       |       |       |       |       |
-| EfficientNet-b0 | SpeechCommands | LEAF | 93.4±0.3 | 94.52±0.4 | [ckpt](https://drive.google.com/file/d/1E9ZsR4TqGXLdl0mqOFUV7H0qelOCDCVI/view?usp=sharing) 
 
+## Loading Pretrained Models
+
+- download and extract desired ckpt from [Results](#results).
+```
+import os
+import torch
+import pickle
+from models.classifier import Classifier
+   
+results_dir = "<path to results folder>"
+hparams_path = os.path.join(results_dir, "hparams.pickle")
+ckpt_path = os.path.join(results_dir, "ckpts", "<checkpoint.pth>")
+checkpoint = torch.load(ckpt_path)
+with open(hparams_path, "rb") as fp:
+    hparams = pickle.load(fp)
+model = Classifier(hparams.cfg)
+print(model.load_state_dict(checkpoint['model_state_dict']))
+
+# to access just the pretrained LEAF frontend
+frontend = model.features
+```
 
 # References
 
