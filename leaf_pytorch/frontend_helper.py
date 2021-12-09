@@ -19,9 +19,10 @@ def get_frontend(opt):
     if "leaf" in front_end_config['name'].lower():
         default_args = front_end_config.get("default_args", False)
         use_legacy_complex = front_end_config.get("use_legacy_complex", False)
+        initializer = front_end_config.get("initializer", "default")
         if default_args:
             print("Using default Leaf arguments..")
-            fe = Leaf(use_legacy_complex=use_legacy_complex)
+            fe = Leaf(use_legacy_complex=use_legacy_complex, initializer=initializer)
         else:
             sr = int(audio_config.get("sample_rate", 16000))
             window_len_ms = float(audio_config.get("window_len", 25.))
@@ -43,7 +44,8 @@ def get_frontend(opt):
                 init_max_freq=max_freq,
                 mean_var_norm=mean_var_norm,
                 pcen_compression=pcen_compress,
-                use_legacy_complex=use_legacy_complex
+                use_legacy_complex=use_legacy_complex,
+                initializer=initializer
             )
     else:
         raise NotImplementedError("Other front ends not implemented yet.")

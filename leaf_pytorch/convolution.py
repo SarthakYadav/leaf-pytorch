@@ -25,7 +25,7 @@ class GaborConstraint(nn.Module):
 class GaborConv1d(nn.Module):
     def __init__(self, filters, kernel_size,
                  strides, padding,
-                 initializer,
+                 initializer=None,
                  use_bias=False,
                  sort_filters=False,
                  use_legacy_complex=False):
@@ -36,14 +36,24 @@ class GaborConv1d(nn.Module):
         self._padding = padding
         self._use_bias = use_bias
         self._sort_filters = sort_filters
-
-        assert isinstance(initializer, Callable)
         #     initializer = override_initializer
         # else:
 
         # initializer = GaborInit(self._filters, default_window_len=self._kernel_size,
         #                             sample_rate=16000, min_freq=60.0, max_freq=7800.0)
-        init_weights = initializer((self._filters, 2))
+        if isinstance(initializer, Callable):
+            init_weights = initializer((self._filters, 2))
+        elif initializer == "random":
+            init_weights = torch.randn(self._filters, 2)
+        elif initializer == "xavier_normal":
+            print("Using xavier_normal init scheme..")
+            init_weights = torch.randn(self._filters, 2)
+            init_weights = torch.nn.init.xavier_normal_(init_weights)
+        elif initializer == "kaiming_normal":
+            init_weights = torch.randn(self._filters, 2)
+            init_weights = torch.nn.init.kaiming_normal_(init_weights)
+        else:
+            raise ValueError("unsupported initializer")
         self.constraint = GaborConstraint(self._kernel_size)
         self._kernel = nn.Parameter(init_weights)
         if self._padding.lower() == "same":

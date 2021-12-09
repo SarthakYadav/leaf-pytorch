@@ -52,12 +52,12 @@ Additional dependencies include
 ## Loading Pretrained Models
 
 - download and extract desired ckpt from [Results](#results).
-```
+```python
 import os
 import torch
 import pickle
 from models.classifier import Classifier
-   
+
 results_dir = "<path to results folder>"
 hparams_path = os.path.join(results_dir, "hparams.pickle")
 ckpt_path = os.path.join(results_dir, "ckpts", "<checkpoint.pth>")
