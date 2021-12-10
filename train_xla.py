@@ -79,6 +79,7 @@ parser.add_argument("--no_wandb", action="store_true")
 parser.add_argument("--high_aug", action="store_true")
 parser.add_argument("--wandb_project", type=str, default="leaf-pytorch")
 parser.add_argument("--wandb_group", type=str, default="dataset")
+parser.add_argument("--wandb_tags", type=str, default=None)
 parser.add_argument("--labels_delimiter", type=str, default=",")
 parser.add_argument("--wandb_watch_model", action="store_true")
 parser.add_argument("--random_seed", type=int, default=8881)
@@ -183,10 +184,13 @@ def train(ARGS):
         log_name = ARGS.log_directory.split("/")[-2]
         print("RUN NAME:", log_name)
         writer = test_utils.get_summary_writer(ARGS.log_directory)
+        wandb_tags = ARGS.wandb_tags
+        if wandb_tags is not None:
+            wandb_tags = wandb_tags.split(",")
         if not ARGS.no_wandb:
             wandb_logger = wandb.init(project='{}'.format(ARGS.wandb_project),
                                       group="{}".format(ARGS.wandb_group),
-                                      config=cfg, name=log_name)
+                                      config=cfg, name=log_name, tags=wandb_tags)
         print(model)
         with open(os.path.join(ARGS.expdir, "hparams.pickle"), "wb") as handle:
             args_to_save = copy.deepcopy(ARGS)
