@@ -30,7 +30,7 @@ torch.backends.cudnn.enabled = False
 
 def get_val_acc(x):
     x = x.split("/")[-1]
-    x = x.replace(".pth","")
+    x = x.replace(".pth", "")
     x = x.split("val_acc=")[-1]
     return float(x)
 
@@ -65,10 +65,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
     hparams_path = os.path.join(args.exp_dir, "hparams.pickle")
     ckpts = sorted(glob.glob(os.path.join(args.exp_dir, "ckpts", "*")), key=get_val_acc)
-    # print(ckpts)
+    print(ckpts)
+    if len(ckpts) == 0:
+        print(f"Well, no checkpoints found in {args.exp_dir}. Exiting...")
+        exit()
     ckpt_path = ckpts[-1]
     print(ckpt_path)
     checkpoint = torch.load(ckpt_path)
+
+    fname = ckpt_path.split("/")[-3]
+    ckpt_ext = "/".join(ckpt_path.split("/")[-3:])
+    res = os.path.join(args.exp_dir, "results.txt")
+    if os.path.exists(res):
+        print(f"{res} files exists.. exiting")
+        exit()
     with open(hparams_path, "rb") as fp:
         hparams = pickle.load(fp)
     model = Classifier(hparams.cfg)
@@ -116,10 +126,12 @@ if __name__ == '__main__':
                 all_preds.append(y_pred_sigmoid.detach().cpu().float())
                 all_gts.append(y.detach().cpu().float())
 
-
     if args.metrics == "multiclass":
         acc = accuracy_score(np.asarray(all_gts), np.asarray(all_preds))
         print("Accuracy: {:.4f}".format(acc))
+        with open(res, "w") as fd:
+            fd.writelines("model,acc,ckpt_ext\n")
+            fd.writelines("{},{},{}\n".format(fname, acc, ckpt_ext))
     else:
         macro_mAP = calculate_mAP(all_preds, all_gts, mode='macro')
         all_preds = torch.cat(all_preds).detach().cpu().numpy()

@@ -41,12 +41,27 @@ Additional dependencies include
 ```
 
 ## Results
+All experiments on VoxCeleb1 and SpeechCommands were repeated at least 5 times, and `95%` ci are reported.
+
 | Model | Dataset | Metric | features | Official | This repo | weights |
 | ----- | ----- | ----- | ----- | ----- | ----- | ----- |
-|       |       |       |       |       |       |       |
-| EfficientNet-b0 | SpeechCommands | Accuracy | LEAF | 93.4±0.3 | 94.5±0.4 | [ckpt](https://drive.google.com/drive/folders/1bPQGE23boXXNkCr2AtDMi8xoZRElpZUK?usp=sharing) 
+| EfficientNet-b0 | SpeechCommands v2 | Accuracy | LEAF | 93.4±0.3 | 94.5±0.3 | [ckpt](https://drive.google.com/drive/folders/162tEtgMDJP9dBs5lEchkCkeOhKSRxKGG?usp=sharing)
+| ResNet-18 | SpeechCommands v2 | Accuracy | LEAF | N/A | 94.05±0.3 | [ckpt](https://drive.google.com/drive/folders/1ZXgkTIO_7MOUICe0399qg476KCSU4R9G?usp=sharing)
 | EfficientNet-b0 | VoxCeleb1 | Accuracy | LEAF | 33.1±0.7 | 40.9±1.8 | [ckpt](https://drive.google.com/drive/folders/1J4dn6QskJ4YicbCJdti680abIxaAQqTN?usp=sharing)
 | ResNet-18 | VoxCeleb1 | Accuracy | LEAF | N/A | 44.7±2.9 | [ckpt](https://drive.google.com/drive/folders/1pWBKaWVDNaI8NusiML91UPHdxTgzP8sd?usp=sharing)
+
+### Observations
+* ResNet-18 likely works better for VoxCeleb1 simply because it's a more difficult task than SpeechCommands and ResNet-18 has more parameters.
+
+### Evaluating different init schemes for `complex_conv` init
+To evaluate how non-`Mel` initialization schemes for `complex_conv` work, experiments were repeated on `xavier_normal`, `kaiming_normal` and `randn` init schemes on the SpeechCommands dataset.
+
+| Model | Features | Init | Test Accuracy| 
+| ----- | ----- | ----- | ----- | 
+| EfficientNet-b0 | LEAF | `Default (Mel)` | 94.5±0.3 |
+| EfficientNet-b0 | LEAF | `randn` | 84.7±1.6 |
+| EfficientNet-b0 | LEAF | `kaiming_normal` | 84.7±2.3 |
+| EfficientNet-b0 | LEAF | `xavier_normal` | 79.1±0.7 |
 
 
 ## Loading Pretrained Models
