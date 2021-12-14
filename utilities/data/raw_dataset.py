@@ -22,7 +22,9 @@ import msgpack_numpy as msgnp
 
 class RawWaveformDataset(Dataset):
     def __init__(self, manifest_path, labels_map, audio_config, augment=False,
-                 mode='multilabel', delimiter=",", mixer=None, transform=None, is_val=False):
+                 mode='multilabel', delimiter=",",
+                 mixer=None, transform=None, is_val=False,
+                 cropped_read=False):
         super(RawWaveformDataset, self).__init__()
         assert os.path.isfile(labels_map)
         assert os.path.splitext(labels_map)[-1] == ".json"
@@ -30,6 +32,8 @@ class RawWaveformDataset(Dataset):
         self.mode = mode
         self.transform = transform
         self.mixer = mixer
+        self.cropped_read = cropped_read
+        self.is_val = is_val
 
         with open(labels_map, 'r') as fd:
             self.labels_map = json.load(fd)
@@ -45,6 +49,8 @@ class RawWaveformDataset(Dataset):
         labels = df['labels'].values.tolist()
         self.files = files
         self.labels = labels
+        if self.cropped_read:
+            self.durations = df['durations'].values.tolist()
         self.spec_parser = RawAudioParser(normalize_waveform=self.normalize)
         self.length = len(self.files)
 
@@ -53,6 +59,11 @@ class RawWaveformDataset(Dataset):
         self.normalize = bool(audio_config.get("normalize", False))
         self.min_duration = float(audio_config.get("min_duration", 2.5))
         self.background_noise_path = audio_config.get("bg_files", None)
+        if self.cropped_read:
+            self.num_frames = int(audio_config.get('random_clip_size') * self.sr)
+        else:
+            self.num_frames = -1
+
         delim = audio_config.get("delimiter", None)
         if delim is not None:
             print("Reassigning delimiter from audio_config")
@@ -64,7 +75,14 @@ class RawWaveformDataset(Dataset):
 
     def __get_item_helper__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         lbls = self.labels[index]
-        preprocessed_audio = load_audio(self.files[index], self.sr, self.min_duration)
+        if self.cropped_read and not self.is_val:
+            dur = self.durations[index]
+        else:
+            dur = None
+        preprocessed_audio = load_audio(self.files[index], self.sr, self.min_duration,
+                                        read_cropped=self.cropped_read,
+                                        frames_to_read=self.num_frames,
+                                        audio_size=dur)
         real, comp = self.__get_feature__(preprocessed_audio)
         label_tensor = self.__parse_labels__(lbls)
 

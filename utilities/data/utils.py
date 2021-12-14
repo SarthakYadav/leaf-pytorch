@@ -1,4 +1,5 @@
 import torch
+import random
 import soundfile as sf
 import numpy as np
 import io
@@ -84,14 +85,22 @@ def _collate_fn_contrastive(batch):
     return batch_xi, batch_xj, targets, targets_supervised
 
 
-def load_audio(f, sr, min_duration: float = 5.):
+def load_audio(f, sr, min_duration: float = 5.,
+               read_cropped=False, frames_to_read=-1, audio_size=None):
     if min_duration is not None:
         min_samples = int(sr * min_duration)
     else:
         min_samples = None
     # x, clip_sr = torchaudio.load(f, channels_first=False)
     # x = x.squeeze().cpu().numpy()
-    x, clip_sr = sf.read(f)     # sound file is > 3x faster than torchaudio sox_io
+    if read_cropped:
+        assert audio_size
+        assert frames_to_read != -1
+        start_idx = random.randint(0, audio_size - frames_to_read - 1)
+        x, clip_sr = sf.read(f, frames=frames_to_read, start=start_idx)
+        print("start_idx: {} | clip size: {}".format(start_idx, len(x)))
+    else:
+        x, clip_sr = sf.read(f)     # sound file is > 3x faster than torchaudio sox_io
     x = x.astype('float32')#.cpu().numpy()
     assert clip_sr == sr
 

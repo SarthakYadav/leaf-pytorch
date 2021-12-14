@@ -69,6 +69,7 @@ parser.add_argument("--labels_delimiter", type=str, default=",")
 parser.add_argument("--wandb_watch_model", action="store_true")
 parser.add_argument("--random_seed", type=int, default=8881)
 parser.add_argument("--continue_from_ckpt", type=str, default=None)
+parser.add_argument("--cropped_read", action="store_true")
 
 
 ARGS = parser.parse_args()
@@ -112,7 +113,7 @@ def train(ARGS):
                                    cfg['audio_config'],
                                    mode=mode, augment=True,
                                    mixer=None, delimiter=ARGS.labels_delimiter,
-                                   transform=tr_tfs, is_val=False)
+                                   transform=tr_tfs, is_val=False, cropped_read=ARGS.cropped_read)
 
     val_set = SpectrogramDataset(cfg['data']['val'],
                                  cfg['data']['labels'],
