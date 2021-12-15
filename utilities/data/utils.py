@@ -96,9 +96,12 @@ def load_audio(f, sr, min_duration: float = 5.,
     if read_cropped:
         assert audio_size
         assert frames_to_read != -1
-        start_idx = random.randint(0, audio_size - frames_to_read - 1)
+        if frames_to_read >= audio_size:
+            start_idx = 0
+        else:
+            start_idx = random.randint(0, audio_size - frames_to_read - 1)
         x, clip_sr = sf.read(f, frames=frames_to_read, start=start_idx)
-        print("start_idx: {} | clip size: {}".format(start_idx, len(x)))
+        # print("start_idx: {} | clip size: {} | frames_to_read:{}".format(start_idx, len(x), frames_to_read))
     else:
         x, clip_sr = sf.read(f)     # sound file is > 3x faster than torchaudio sox_io
     x = x.astype('float32')#.cpu().numpy()
