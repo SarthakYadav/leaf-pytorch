@@ -7,6 +7,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from utilities.data import packed_dataset
 from utilities.data.utils import _collate_fn_raw, _collate_fn_raw_multiclass
 from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms
 from utilities.config_parser import parse_config, get_data_info, get_config
@@ -70,6 +71,7 @@ parser.add_argument("--wandb_watch_model", action="store_true")
 parser.add_argument("--random_seed", type=int, default=8881)
 parser.add_argument("--continue_from_ckpt", type=str, default=None)
 parser.add_argument("--cropped_read", action="store_true")
+parser.add_argument("--use_packed_dataset", action="store_true")
 
 
 ARGS = parser.parse_args()
@@ -108,19 +110,34 @@ def train(ARGS):
                                               sample_rate=ac['sample_rate'])
         val_tfs = simple_supervised_transforms(False, val_clip_size,
                                                sample_rate=ac['sample_rate'])
-    train_set = SpectrogramDataset(cfg['data']['train'],
-                                   cfg['data']['labels'],
-                                   cfg['audio_config'],
-                                   mode=mode, augment=True,
-                                   mixer=None, delimiter=ARGS.labels_delimiter,
-                                   transform=tr_tfs, is_val=False, cropped_read=ARGS.cropped_read)
+    if ARGS.use_packed_dataset:
+        train_set = packed_dataset.PackedDataset(cfg['data']['train'],
+                                                 cfg['data']['labels'],
+                                                 cfg['audio_config'],
+                                                 mode=mode, augment=True,
+                                                 mixer=None, delimiter=ARGS.labels_delimiter,
+                                                 transform=tr_tfs, is_val=False,
+                                                 cropped_read=ARGS.cropped_read)
+        val_set = packed_dataset.PackedDataset(cfg['data']['val'],
+                                               cfg['data']['labels'],
+                                               cfg['audio_config'],
+                                               mode=mode, augment=False,
+                                               mixer=None, delimiter=ARGS.labels_delimiter,
+                                               transform=val_tfs, is_val=True)
+    else:
+        train_set = SpectrogramDataset(cfg['data']['train'],
+                                       cfg['data']['labels'],
+                                       cfg['audio_config'],
+                                       mode=mode, augment=True,
+                                       mixer=None, delimiter=ARGS.labels_delimiter,
+                                       transform=tr_tfs, is_val=False, cropped_read=ARGS.cropped_read)
 
-    val_set = SpectrogramDataset(cfg['data']['val'],
-                                 cfg['data']['labels'],
-                                 cfg['audio_config'],
-                                 mode=mode, augment=False,
-                                 mixer=None, delimiter=ARGS.labels_delimiter,
-                                 transform=val_tfs, is_val=True)
+        val_set = SpectrogramDataset(cfg['data']['val'],
+                                     cfg['data']['labels'],
+                                     cfg['audio_config'],
+                                     mode=mode, augment=False,
+                                     mixer=None, delimiter=ARGS.labels_delimiter,
+                                     transform=val_tfs, is_val=True)
 
     batch_size = cfg['opt']['batch_size']
 
@@ -128,7 +145,17 @@ def train(ARGS):
     device = torch.device(f"cuda:{ARGS.gpu_id}")
     # model = model_helper(cfg['model']).to(device)
     model = Classifier(cfg).to(device)
-    collate_fn = _collate_fn_raw_multiclass if mode == "multiclass" else _collate_fn_raw
+    if mode == "multiclass":
+        if ARGS.use_packed_dataset:
+            collate_fn = packed_dataset.packed_collate_fn_raw_multiclass
+        else:
+            collate_fn = _collate_fn_raw_multiclass
+    else:
+        if ARGS.use_packed_dataset:
+            collate_fn = packed_dataset.packed_collate_fn_raw_multilabel
+        else:
+            collate_fn = _collate_fn_raw
+
     train_loader, val_loader = setup_dataloaders(train_set, val_set,
                                                  batch_size=batch_size, collate_fn=collate_fn,
                                                  num_workers=ARGS.num_workers)

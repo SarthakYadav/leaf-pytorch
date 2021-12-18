@@ -115,13 +115,24 @@ def load_audio(f, sr, min_duration: float = 5.,
     return x
 
 
-def load_audio_bytes(buffer, sr, min_duration: float = 5.):
+def load_audio_bytes(buffer, sr, min_duration: float = 5.,
+                     read_cropped=False, frames_to_read=-1, audio_size=None):
     if min_duration is not None:
         min_samples = int(sr * min_duration)
     else:
         min_samples = None
-    with io.BytesIO(buffer) as buf:
-        x, clip_sr = sf.read(buf)
+    if read_cropped:
+        assert audio_size
+        assert frames_to_read != -1
+        if frames_to_read >= audio_size:
+            start_idx = 0
+        else:
+            start_idx = random.randint(0, audio_size - frames_to_read - 1)
+        with io.BytesIO(buffer) as buf:
+            x, clip_sr = sf.read(buf)
+    else:
+        with io.BytesIO(buffer) as buf:
+            x, clip_sr = sf.read(buf)
     x = x.astype('float32')
     assert clip_sr == sr
 
