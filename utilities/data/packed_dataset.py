@@ -11,6 +11,7 @@ import torch
 import json
 import random
 import pandas as pd
+from google.cloud import storage
 from torch.utils.data import Dataset
 from typing import Tuple, Optional
 from utilities.data.utils import _collate_fn_raw, _collate_fn_raw_multiclass, _collate_fn_contrastive
@@ -38,7 +39,7 @@ class PackedDataset(Dataset):
                  audio_config, augment=False,
                  mode='multilabel', delimiter=",",
                  mixer=None, transform=None, is_val=False,
-                 cropped_read=False):
+                 cropped_read=False, gcs_bucket_path=None):
         super(PackedDataset, self).__init__()
         assert os.path.isfile(labels_map)
         assert os.path.splitext(labels_map)[-1] == ".json"
@@ -48,6 +49,13 @@ class PackedDataset(Dataset):
         self.mixer = mixer
         self.cropped_read = cropped_read
         self.is_val = is_val
+        self.gcs_bucket_path = gcs_bucket_path
+        if self.gcs_bucket_path:
+            self.client = None
+        # if gcs_bucket_path:
+            # self.use_gcs = True
+            # self.storage_client = storage.Client()
+            # self.bucket = storage_client.get_bucket(gcs_bucket_path)
 
         with open(labels_map, 'r') as fd:
             self.labels_map = json.load(fd)
@@ -117,10 +125,21 @@ class PackedDataset(Dataset):
 
     def __len__(self):
         return self.length
+    
+    def init_gcs(self):
+        self.client = storage.Client()
+        self.bucket = self.client.get_bucket(self.gcs_bucket_path)
 
     def __getitem__(self, item):
         filepath = self.files[item]
-        read_block = unpack_batch(filepath)
+        if self.gcs_bucket_path:
+            if self.client is None:
+                self.init_gcs()
+            blob = self.bucket.blob(filepath)
+            with blob.open("rb") as fp:
+                read_block = msgpack.unpackb(fp.read(), object_hook=msgnp.decode)
+        else:
+            read_block = unpack_batch(filepath)
         if not self.is_val:
             idxs = np.random.permutation(len(read_block))
         else:

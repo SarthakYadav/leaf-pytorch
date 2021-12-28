@@ -87,6 +87,7 @@ parser.add_argument("--random_seed", type=int, default=8881)
 parser.add_argument("--continue_from_ckpt", type=str, default=None)
 parser.add_argument("--cropped_read", action="store_true")
 parser.add_argument("--use_packed_dataset", action="store_true")
+parser.add_argument("--gcs_bucket_name", type=str, default=None)
 
 
 ARGS = parser.parse_args()
@@ -148,13 +149,15 @@ def train(ARGS):
                                                  mode=mode, augment=True,
                                                  mixer=None, delimiter=ARGS.labels_delimiter,
                                                  transform=tr_tfs, is_val=False,
-                                                 cropped_read=ARGS.cropped_read)
+                                                 cropped_read=ARGS.cropped_read,
+                                                 gcs_bucket_path=ARGS.gcs_bucket_name)
         val_set = packed_dataset.PackedDataset(cfg['data']['val'],
                                                cfg['data']['labels'],
                                                cfg['audio_config'],
                                                mode=mode, augment=False,
                                                mixer=None, delimiter=ARGS.labels_delimiter,
-                                               transform=val_tfs, is_val=True)
+                                               transform=val_tfs, is_val=True,
+                                               gcs_bucket_path=ARGS.gcs_bucket_name)
     else:
         train_set = SpectrogramDataset(cfg['data']['train'],
                                        cfg['data']['labels'],
@@ -254,7 +257,6 @@ def train(ARGS):
 
         for batch in train_device_loader:
             x, _, y = batch
-            # print(y)
             if mixup_enabled:
                 if mode == "multilabel":
                     x, y, _, _ = do_mixup(x, y, mode=mode)
@@ -278,7 +280,7 @@ def train(ARGS):
             optimizer.zero_grad()
             loss.backward()
             xm.optimizer_step(optimizer)
-            tracker.add(batch_size)
+            tracker.add(x.size(0))
             if tr_step_counter % ARGS.log_steps == 0:
                 xm.add_step_closure(
                     _train_update, args=(device, tr_step_counter, loss, tracker, epoch, writer)
