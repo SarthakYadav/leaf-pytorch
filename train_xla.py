@@ -22,7 +22,7 @@ import argparse
 import wandb
 from utilities.data import packed_dataset
 from utilities.data.utils import _collate_fn_raw, _collate_fn_raw_multiclass
-from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms
+from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms, leaf_supervised_transforms
 from utilities.config_parser import parse_config, get_data_info, get_config
 from models.classifier import Classifier
 from utilities.training_utils import setup_dataloaders, optimization_helper
@@ -138,9 +138,9 @@ def train(ARGS):
         val_tfs = get_raw_transforms_v2(False, val_clip_size, center_crop_val=True,
                                         sample_rate=ac['sample_rate'])
     else:
-        tr_tfs = simple_supervised_transforms(True, random_clip_size,
+        tr_tfs = leaf_supervised_transforms(True, random_clip_size,
                                               sample_rate=ac['sample_rate'])
-        val_tfs = simple_supervised_transforms(False, val_clip_size,
+        val_tfs = leaf_supervised_transforms(False, val_clip_size,
                                                sample_rate=ac['sample_rate'])
     if ARGS.use_packed_dataset:
         train_set = packed_dataset.PackedDataset(cfg['data']['train'],
@@ -236,6 +236,7 @@ def train(ARGS):
 
     mixup_enabled = cfg["audio_config"].get("mixup", False)  # and mode == "multilabel"
     if mixup_enabled:
+        mixup_alpha = float(cfg['audio_config'].get("mixup_alpha", 0.3))
         xm.master_print("Attention: Will use mixup while training..")
 
     torch.set_grad_enabled(True)
@@ -259,9 +260,9 @@ def train(ARGS):
             x, _, y = batch
             if mixup_enabled:
                 if mode == "multilabel":
-                    x, y, _, _ = do_mixup(x, y, mode=mode)
+                    x, y, _, _ = do_mixup(x, y, alpha=mixup_alpha, mode=mode)
                 elif mode == "multiclass":
-                    x, y_a, y_b, lam = do_mixup(x, y, mode=mode)
+                    x, y_a, y_b, lam = do_mixup(x, y, alpha=mixup_alpha, mode=mode)
             pred = model(x)
             if mode == "multiclass":
                 pred_labels = pred.max(1, keepdim=True)[1]
@@ -354,7 +355,7 @@ def train(ARGS):
                 write_xla_metrics=True)
         save_checkpoint(model, optimizer, scheduler, epoch, epoch_tr_loss, tr_acc, accuracy)
         if scheduler_name == "reduce":
-            scheduler.step(tr_acc)
+            scheduler.step(accuracy)
         else:
             scheduler.step()
 

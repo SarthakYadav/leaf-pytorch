@@ -393,3 +393,24 @@ def simple_supervised_transforms(is_train, size, sample_rate=8000):
         tfs = [PadToSize(size, "wrap"), CenterCrop(size), PeakNormalization(sr=sample_rate)]
     transforms = Compose(tfs)
     return transforms
+
+
+def leaf_supervised_transforms(is_train, size, sample_rate=16000):
+    if is_train:
+        tfs = [
+            OneOf(
+                [PadToSize(size, mode='wrap'),
+                PadToSize(size, mode='constant')],
+                p=[0.5, 1 - 0.5]), 
+        RandomCrop(size), 
+        UseWithProb(RandomGain(sr=sample_rate), prob=0.5),
+        UseWithProb(AddGaussianNoise(), prob=0.5),
+        PeakNormalization(sr=sample_rate)]
+    else:
+        tfs = [
+            PadToSize(size, "wrap"), 
+            CenterCrop(size), 
+            PeakNormalization(sr=sample_rate)
+        ]
+    transforms = Compose(tfs)
+    return transforms

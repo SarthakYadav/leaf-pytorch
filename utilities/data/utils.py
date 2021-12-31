@@ -122,19 +122,39 @@ def load_audio_bytes(buffer, sr, min_duration: float = 5.,
         min_samples = int(sr * min_duration)
     else:
         min_samples = None
+    load_full = True
     if read_cropped:
+        load_full = False
         assert audio_size
         assert frames_to_read != -1
         if frames_to_read >= audio_size:
-            start_idx = 0
+            with io.BytesIO(buffer) as buf:
+                x, clip_sr = sf.read(buf)
         else:
             start_idx = random.randint(0, audio_size - frames_to_read - 1)
-        with io.BytesIO(buffer) as buf:
-            x, clip_sr = sf.read(buf)
+            with io.BytesIO(buffer) as buf:
+                try:
+                    x, clip_sr = sf.read(buf, frames=frames_to_read, start=start_idx)
+                except RuntimeError as ex:
+                    load_full = True
+                    print("{} {} {}. Attempting full read..".format(ex, start_idx, frames_to_read))
+            if load_full:
+                with io.BytesIO(buffer) as buf:
+                    try:
+                        x, clip_sr = sf.read(buf)
+                        x = x[start_idx:start_idx+frames_to_read]
+                    except RuntimeError as ex:
+                        print("Catastrophic read failure. {} {} {}".format(ex, start_idx, frames_to_read))
+                        return None
         min_samples = frames_to_read
     else:
         with io.BytesIO(buffer) as buf:
-            x, clip_sr = sf.read(buf)
+            try:
+                x, clip_sr = sf.read(buf)
+            except RuntimeError as ex:
+                # no getting away with this now
+                print("Catastrophic read failure. {} {} {}".format(ex, start_idx, frames_to_read))
+                return None
     x = x.astype('float32')
     assert clip_sr == sr
 
