@@ -68,7 +68,7 @@ __optional_arguments__ = {
         "scheduler": "step",
         "agc_clip_factor": 0.01,
         "weight_decay": 0.,
-        "agc_clipping": True,
+        "agc_clipping": False,
         "gamma": 0.1,
         "patience": 15,
         "step_size": 30,

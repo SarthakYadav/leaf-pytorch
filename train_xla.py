@@ -75,7 +75,7 @@ parser.add_argument("--tpus", type=int, default=1)
 parser.add_argument("--log_steps", default=10, type=int)
 parser.add_argument("--no_wandb", action="store_true")
 parser.add_argument("--high_aug", action="store_true")
-parser.add_argument("--wandb_project", type=str, default="leaf-pytorch")
+parser.add_argument("--wandb_project", type=str, default="leaf-pytorch-v2")
 parser.add_argument("--wandb_group", type=str, default="dataset")
 parser.add_argument("--wandb_tags", type=str, default=None)
 parser.add_argument("--labels_delimiter", type=str, default=",")
@@ -221,6 +221,7 @@ def train(ARGS):
     if agc_clip:
         agc_clip_factor = float(cfg['opt'].get("agc_clip_factor", 0.01))
         print("ATTENTION: AGC CLIPPING ENABLED WITH CLIP FACTOR {}".format(agc_clip_factor))
+        print("WARNING: AGC_CLIPPING not correctly supported, fc layer gradients are also being clipped.")
 
     accuracy, max_accuracy = 0.0, 0.0
     for epoch in range(start_epoch, ARGS.epochs + 1):
@@ -263,7 +264,7 @@ def train(ARGS):
             optimizer.zero_grad()
             loss.backward()
             if agc_clip:
-                adaptive_clip_grad(model.encoder.parameters(), clip_factor=agc_clip_factor)
+                adaptive_clip_grad(model.model.parameters(), clip_factor=agc_clip_factor)
             xm.optimizer_step(optimizer)
             tracker.add(x.size(0))
             if tr_step_counter % ARGS.log_steps == 0:
