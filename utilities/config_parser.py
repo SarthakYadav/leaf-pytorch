@@ -53,10 +53,10 @@ def get_data_info(cfg: Dict, augment: Optional[bool] = True) -> Dict:
 
 
 __compulsory_keys__ = {
-    "frontend": ['name'],
+    # "frontend": ['name'],
     "model": ["arch", "type"],
     "opt": ["optimizer", "lr", "batch_size"],
-    "audio_config": ["feature", "normalize", "sample_rate", "min_duration"],
+    "audio_config": ["features", "normalize_waveform", "sample_rate", "min_duration"],
     "data": ["meta_root", "is_lmdb", "label_map"]
 }
 
@@ -101,7 +101,7 @@ def check_and_fill_optional_arguments(cfg):
                 v[optk] = optv
 
     if cfg['model']['type'] == "contrastive":
-        assert "proj_out_dim" in cfg['model'].keys()
+        assert "embedding_dims" in cfg['model'].keys()
     print(cfg)
 
 

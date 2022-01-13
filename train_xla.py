@@ -1,36 +1,33 @@
 import os
 import copy
 import pickle
-from threading import main_thread
-import numpy as np
-from torch.optim import lr_scheduler
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
-import torchvision
-import torchvision.transforms as transforms
+import wandb
+import argparse
 import torch_xla
-import torch_xla.debug.metrics as met
-import torch_xla.distributed.parallel_loader as pl
+import torchvision
+import numpy as np
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.optim import lr_scheduler
 import torch_xla.utils.utils as xu
+import torch_xla.debug.metrics as met
 import torch_xla.core.xla_model as xm
-import torch_xla.distributed.xla_multiprocessing as xmp
+from models.classifier import Classifier
+import torchvision.transforms as transforms
 import torch_xla.test.test_utils as test_utils
 from torch.utils.data import DataLoader, sampler
-import argparse
-import wandb
-from utilities.data import packed_dataset
-from utilities.data.utils import _collate_fn_raw, _collate_fn_raw_multiclass
-from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms, leaf_supervised_transforms
-from utilities.config_parser import parse_config, get_data_info, get_config
-from models.classifier import Classifier
-from utilities.training_utils import setup_dataloaders, optimization_helper
-import argparse
-from utilities.data.raw_dataset import RawWaveformDataset as SpectrogramDataset
-import wandb
-from utilities.data.mixup import do_mixup, mixup_criterion
+import torch_xla.distributed.parallel_loader as pl
 from utilities.metrics_helper import calculate_mAP
+import torch_xla.distributed.xla_multiprocessing as xmp
+from utilities.data.mixup import do_mixup, mixup_criterion
+from utilities.config_parser import parse_config, get_data_info, get_config
+from utilities.training_utils import setup_dataloaders, optimization_helper
+from audio_utils.common import feature_transforms, transforms
+from audio_utils import packed_datasets, transforms_helper
+from audio_utils.common.audio_config import AudioConfig, Features
+from utilities.agc import adaptive_clip_grad
 
 
 def save_checkpoint(model, optimizer, scheduler, epoch,
@@ -130,48 +127,30 @@ def train(ARGS):
     # random_clip_size = int(ARGS.random_clip_size * cfg['audio_config']['sample_rate'])
     # val_clip_size = int(ARGS.val_clip_size * cfg['audio_config']['sample_rate'])
     ac = cfg['audio_config']
-    random_clip_size = int(ac['random_clip_size'] * ac['sample_rate'])
-    val_clip_size = int(ac['val_clip_size'] * ac['sample_rate'])
-    if ARGS.high_aug:
-        tr_tfs = get_raw_transforms_v2(True, random_clip_size,
-                                       sample_rate=ac['sample_rate'])
-        val_tfs = get_raw_transforms_v2(False, val_clip_size, center_crop_val=True,
-                                        sample_rate=ac['sample_rate'])
-    else:
-        tr_tfs = leaf_supervised_transforms(True, random_clip_size,
-                                              sample_rate=ac['sample_rate'])
-        val_tfs = leaf_supervised_transforms(False, val_clip_size,
-                                               sample_rate=ac['sample_rate'])
-    if ARGS.use_packed_dataset:
-        train_set = packed_dataset.PackedDataset(cfg['data']['train'],
-                                                 cfg['data']['labels'],
-                                                 cfg['audio_config'],
-                                                 mode=mode, augment=True,
-                                                 mixer=None, delimiter=ARGS.labels_delimiter,
-                                                 transform=tr_tfs, is_val=False,
-                                                 cropped_read=ARGS.cropped_read,
-                                                 gcs_bucket_path=ARGS.gcs_bucket_name)
-        val_set = packed_dataset.PackedDataset(cfg['data']['val'],
-                                               cfg['data']['labels'],
-                                               cfg['audio_config'],
-                                               mode=mode, augment=False,
-                                               mixer=None, delimiter=ARGS.labels_delimiter,
-                                               transform=val_tfs, is_val=True,
-                                               gcs_bucket_path=ARGS.gcs_bucket_name)
-    else:
-        train_set = SpectrogramDataset(cfg['data']['train'],
-                                       cfg['data']['labels'],
-                                       cfg['audio_config'],
-                                       mode=mode, augment=True,
-                                       mixer=None, delimiter=ARGS.labels_delimiter,
-                                       transform=tr_tfs, is_val=False, cropped_read=ARGS.cropped_read)
+    audio_config = AudioConfig()
+    audio_config.parse_from_config(ac)
+    tr_tfs, val_tfs = transforms_helper.basic_supervised_transforms(audio_config)
 
-        val_set = SpectrogramDataset(cfg['data']['val'],
-                                     cfg['data']['labels'],
-                                     cfg['audio_config'],
-                                     mode=mode, augment=False,
-                                     mixer=None, delimiter=ARGS.labels_delimiter,
-                                     transform=val_tfs, is_val=True)
+    train_set = packed_datasets.PackedDataset(
+        manifest_path=cfg['data']['train'],
+        labels_map=cfg['data']['labels'],
+        audio_config=audio_config,
+        mode=mode,
+        labels_delimiter=ARGS.labels_delimiter,
+        pre_feature_transforms=tr_tfs['pre'],
+        post_feature_transforms=tr_tfs['post'],
+        gcs_bucket_path=ARGS.gcs_bucket_name
+    )
+    val_set = packed_datasets.PackedDataset(
+        manifest_path=cfg['data']['val'],
+        labels_map=cfg['data']['labels'],
+        audio_config=audio_config,
+        mode=mode,
+        labels_delimiter=ARGS.labels_delimiter,
+        pre_feature_transforms=val_tfs['pre'],
+        post_feature_transforms=val_tfs['post'],
+        gcs_bucket_path=ARGS.gcs_bucket_name
+    )
 
     batch_size = cfg['opt']['batch_size']
 
@@ -179,15 +158,9 @@ def train(ARGS):
     # model = model_helper(cfg['model']).to(device)
     model = Classifier(cfg).to(device)
     if mode == "multiclass":
-        if ARGS.use_packed_dataset:
-            collate_fn = packed_dataset.packed_collate_fn_raw_multiclass
-        else:
-            collate_fn = _collate_fn_raw_multiclass
+        collate_fn = packed_datasets.packed_collate_fn_multiclass
     else:
-        if ARGS.use_packed_dataset:
-            collate_fn = packed_dataset.packed_collate_fn_raw_multilabel
-        else:
-            collate_fn = _collate_fn_raw
+        collate_fn = packed_datasets.packed_collate_fn_multilabel
 
     train_loader, val_loader = setup_dataloaders(train_set, val_set, batch_size=batch_size,
                                                  device_world_size=tpu_world_size, local_rank=tpu_local_rank,
@@ -201,7 +174,8 @@ def train(ARGS):
                                                                num_epochs=ARGS.epochs)
     if ARGS.continue_from_ckpt:
         xm.master_print("Attempting to load checkpoint {}".format(ARGS.continue_from_ckpt))
-        start_epoch = load_checkpoint(ARGS.continue_from_ckpt, model, optimizer, scheduler)
+        ckpt_epoch = load_checkpoint(ARGS.continue_from_ckpt, model, optimizer, scheduler)
+        start_epoch = ckpt_epoch + 1
         xm.master_print("Checkpoint loading successful.. Continuing training from Epoch {}".format(start_epoch))
     else:
         start_epoch = 1
@@ -236,12 +210,17 @@ def train(ARGS):
 
     mixup_enabled = cfg["audio_config"].get("mixup", False)  # and mode == "multilabel"
     if mixup_enabled:
-        mixup_alpha = float(cfg['audio_config'].get("mixup_alpha", 0.3))
         xm.master_print("Attention: Will use mixup while training..")
+        mixup_alpha = float(cfg['audio_config'].get("mixup_alpha", 0.3))
 
     torch.set_grad_enabled(True)
     if wandb_logger and ARGS.wandb_watch_model:
         wandb_logger.watch(model, log="all", log_freq=100)
+
+    agc_clip = bool(cfg['opt'].get("agc_clipping", False))
+    if agc_clip:
+        agc_clip_factor = float(cfg['opt'].get("agc_clip_factor", 0.01))
+        print("ATTENTION: AGC CLIPPING ENABLED WITH CLIP FACTOR {}".format(agc_clip_factor))
 
     accuracy, max_accuracy = 0.0, 0.0
     for epoch in range(start_epoch, ARGS.epochs + 1):
@@ -257,7 +236,10 @@ def train(ARGS):
         tr_gts = []
 
         for batch in train_device_loader:
-            x, _, y = batch
+            x, y = batch
+            if tr_step_counter == 0 and epoch == 1 and xm.is_master_ordinal():
+                print("input shape:", x.shape)
+                print("targets shape:", y.shape)
             if mixup_enabled:
                 if mode == "multilabel":
                     x, y, _, _ = do_mixup(x, y, alpha=mixup_alpha, mode=mode)
@@ -280,6 +262,8 @@ def train(ARGS):
 
             optimizer.zero_grad()
             loss.backward()
+            if agc_clip:
+                adaptive_clip_grad(model.encoder.parameters(), clip_factor=agc_clip_factor)
             xm.optimizer_step(optimizer)
             tracker.add(x.size(0))
             if tr_step_counter % ARGS.log_steps == 0:
@@ -310,12 +294,14 @@ def train(ARGS):
         correct = 0
         del tr_gts, tr_preds
         if xm.is_master_ordinal():
-            curr_lr = scheduler.get_lr()
             xm.master_print("Validating..")
             val_preds = []
             val_gts = []
             for batch in val_device_loader:
-                x, _, y = batch
+                x, y = batch
+                if val_step_counter == 0 and epoch == 1 and xm.is_master_ordinal():
+                    print("input shape:", x.shape)
+                    print("targets shape:", y.shape)
                 with torch.no_grad():
                     pred = model(x)
                     # xm.master_print("pred.shape:", pred.shape)
@@ -327,6 +313,7 @@ def train(ARGS):
                     y_pred_sigmoid = torch.sigmoid(pred)
                     val_preds.append(y_pred_sigmoid.detach().cpu().float())
                     val_gts.append(y.detach().cpu().float())
+                val_step_counter += 1
             if mode == "multiclass":
                 accuracy = correct.item() / total_samples
                 # accuracy = xm.mesh_reduce('test_accuracy', accuracy, np.mean)
