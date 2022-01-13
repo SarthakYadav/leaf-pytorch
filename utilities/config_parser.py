@@ -53,7 +53,7 @@ def get_data_info(cfg: Dict, augment: Optional[bool] = True) -> Dict:
 
 
 __compulsory_keys__ = {
-    # "frontend": ['name'],
+    "frontend": ['name'],
     "model": ["arch", "type"],
     "opt": ["optimizer", "lr", "batch_size"],
     "audio_config": ["features", "normalize_waveform", "sample_rate", "min_duration"],
@@ -90,7 +90,7 @@ def check_and_fill_optional_arguments(cfg):
 
     for k, v in cfg.items():
         # make sure compulsory keys are present
-        assert k in __compulsory_keys__.keys()
+        assert k in __compulsory_keys__.keys(), "{} not found".format(k)
         rkeys = __compulsory_keys__[k]
         subkeys = v.keys()
         for rkey in rkeys:
