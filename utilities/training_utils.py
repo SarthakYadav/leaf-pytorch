@@ -6,7 +6,9 @@ import transformers
 def setup_dataloaders(train_set, val_set, batch_size,
                       device_world_size=1, local_rank=0,
                       collate_fn=None, num_workers=4,
-                      multi_device_val=False, need_val=True):
+                      multi_device_val=False, need_val=True,
+                      persistent_workers=False, pin_memory=False,
+                      prefetch_factor=8):
     train_sampler = None
     val_sampler = None
     tr_shuffle = True
@@ -25,12 +27,16 @@ def setup_dataloaders(train_set, val_set, batch_size,
                 shuffle=False
             )
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=tr_shuffle,
-                              sampler=train_sampler,
-                              num_workers=num_workers, collate_fn=collate_fn)
+                              sampler=train_sampler, pin_memory=pin_memory, 
+                              persistent_workers=persistent_workers,
+                              num_workers=num_workers, collate_fn=collate_fn, 
+                              prefetch_factor=prefetch_factor)
     if need_val:
         val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False,
-                                sampler=val_sampler,
-                                num_workers=num_workers, collate_fn=collate_fn)
+                                sampler=val_sampler, pin_memory=pin_memory, 
+                                persistent_workers=persistent_workers,
+                                num_workers=num_workers, collate_fn=collate_fn,
+                                prefetch_factor=prefetch_factor)
     else:
         val_loader = None
     return train_loader, val_loader

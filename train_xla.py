@@ -69,15 +69,12 @@ parser.add_argument('--mixer_prob', type=float, default=0.75,
                     help="background noise augmentation probability")
 parser.add_argument("--fp16", action="store_true",
                     help='flag to train in FP16 mode')
-parser.add_argument("--random_clip_size", type=float, default=5)
-parser.add_argument("--val_clip_size", type=float, default=5)
-parser.add_argument("--use_mixers", action="store_true")
-parser.add_argument("--use_mixup", action="store_true")
 parser.add_argument("--prefetch_factor", type=int, default=4)
+parser.add_argument("--pin_memory", action="store_true")
+parser.add_argument("--persistent_workers", action="store_true")
 parser.add_argument("--tpus", type=int, default=1)
 parser.add_argument("--log_steps", default=10, type=int)
 parser.add_argument("--no_wandb", action="store_true")
-parser.add_argument("--high_aug", action="store_true")
 parser.add_argument("--wandb_project", type=str, default="leaf-pytorch-v2")
 parser.add_argument("--wandb_group", type=str, default="dataset")
 parser.add_argument("--wandb_tags", type=str, default=None)
@@ -255,8 +252,11 @@ def train(ARGS):
 
     train_loader, val_loader = setup_dataloaders(train_set, val_set, batch_size=batch_size,
                                                  device_world_size=tpu_world_size, local_rank=tpu_local_rank,
-                                                 collate_fn=collate_fn, num_workers=ARGS.num_workers)
-    train_device_loader = pl.MpDeviceLoader(train_loader, device)
+                                                 collate_fn=collate_fn, num_workers=ARGS.num_workers,
+                                                 persistent_workers=ARGS.persistent_workers,
+                                                 pin_memory=ARGS.pin_memory,
+                                                 prefetch_factor=ARGS.prefetch_factor)
+    train_device_loader = pl.MpDeviceLoader(train_loader, device, loader_prefetch_size=ARGS.prefetch_factor)
     val_device_loader = pl.MpDeviceLoader(val_loader, device)
     num_steps_per_epoch = len(train_loader)
     optimizer, scheduler, scheduler_name = optimization_helper(model.parameters(), cfg, ARGS.tpus,

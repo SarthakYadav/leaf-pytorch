@@ -73,7 +73,8 @@ class GaborConv1d(nn.Module):
         kernel = self.constraint(self._kernel)
         if self._sort_filters:
             raise NotImplementedError("sort filter functionality not yet implemented")
-        filters = gabor_filters(kernel, self._kernel_size, legacy_complex=self.use_legacy_complex)
+        with torch.no_grad():
+            filters = gabor_filters(kernel, self._kernel_size, legacy_complex=self.use_legacy_complex)
         if not self.use_legacy_complex:
             temp = torch.view_as_real(filters)
             real_filters = temp[:, :, 0]
