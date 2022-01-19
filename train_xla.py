@@ -85,6 +85,7 @@ parser.add_argument("--continue_from_ckpt", type=str, default=None)
 parser.add_argument("--cropped_read", action="store_true")
 parser.add_argument("--use_packed_dataset", action="store_true")
 parser.add_argument("--gcs_bucket_name", type=str, default=None)
+parser.add_argument("--npy_blobs", action="store_true")
 
 
 ARGS = parser.parse_args()
@@ -217,6 +218,7 @@ def train(ARGS):
     audio_config = AudioConfig()
     audio_config.parse_from_config(ac)
     # tr_tfs, val_tfs = transforms_helper.basic_supervised_transforms(audio_config)
+    record_format = "numpy" if ARGS.npy_blobs else "encoded"
     tr_tfs, val_tfs = leaf_raw_supervised_transforms(audio_config)
 
     train_set = packed_datasets.PackedDataset(
@@ -227,7 +229,8 @@ def train(ARGS):
         labels_delimiter=ARGS.labels_delimiter,
         pre_feature_transforms=tr_tfs['pre'],
         post_feature_transforms=tr_tfs['post'],
-        gcs_bucket_path=ARGS.gcs_bucket_name
+        gcs_bucket_path=ARGS.gcs_bucket_name,
+        record_format=record_format
     )
     val_set = packed_datasets.PackedDataset(
         manifest_path=cfg['data']['val'],
@@ -237,7 +240,8 @@ def train(ARGS):
         labels_delimiter=ARGS.labels_delimiter,
         pre_feature_transforms=val_tfs['pre'],
         post_feature_transforms=val_tfs['post'],
-        gcs_bucket_path=ARGS.gcs_bucket_name
+        gcs_bucket_path=ARGS.gcs_bucket_name,
+        record_format=record_format
     )
 
     batch_size = cfg['opt']['batch_size']
