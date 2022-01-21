@@ -86,6 +86,7 @@ parser.add_argument("--cropped_read", action="store_true")
 parser.add_argument("--use_packed_dataset", action="store_true")
 parser.add_argument("--gcs_bucket_name", type=str, default=None)
 parser.add_argument("--npy_blobs", action="store_true")
+parser.add_argument("--per_device_lr_scaling", action="store_true")
 
 
 ARGS = parser.parse_args()
@@ -266,7 +267,8 @@ def train(ARGS):
     optimizer, scheduler, scheduler_name = optimization_helper(model.parameters(), cfg, ARGS.tpus,
                                                                reduce_on_plateau_mode="max",
                                                                num_tr_steps_per_epoch=num_steps_per_epoch,
-                                                               num_epochs=ARGS.epochs)
+                                                               num_epochs=ARGS.epochs,
+                                                               per_device_lr_scaling=ARGS.per_device_lr_scaling)
     if ARGS.continue_from_ckpt:
         xm.master_print("Attempting to load checkpoint {}".format(ARGS.continue_from_ckpt))
         ckpt_epoch = load_checkpoint(ARGS.continue_from_ckpt, model, optimizer, scheduler)
