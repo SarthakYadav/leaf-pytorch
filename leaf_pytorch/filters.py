@@ -45,7 +45,7 @@ class GaborFilter():
 
 
     def mel_filters(self):
-        mel_filters = torchaudio.functional.create_fb_matrix(
+        mel_filters = torchaudio.functional.melscale_fbanks(
             n_freqs=self.n_fft // 2 + 1,
             f_min=self.min_freq,
             f_max=self.max_freq,
