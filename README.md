@@ -1,12 +1,17 @@
 # leaf-pytorch
 
 - [Sponsors](#sponsors)
+- [Attention](#attention)
 - [About](#about) 
 - [Key Points](#key-points) 
 - [Dependencies](#dependencies) 
 - [Results](#results) 
 - [Loading Pretrained Models](#loading-pretrained-models)
 - [References](#references)
+
+## Attention
+
+`leaf-pytorch` implementation is now officially a part of [SpeechBrain](https://github.com/speechbrain/speechbrain), with a sample recipe on SpeechCommands-v2 [here](https://github.com/speechbrain/speechbrain/tree/develop/recipes/Google-speech-commands). I would recommend folks trying to work with LEAF use SpeechBrain implementation instead, because of the overall ecosystem as well as better documentation. Thanks for your interest!
 
 ## Sponsors
 
