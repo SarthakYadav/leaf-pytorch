@@ -37,12 +37,35 @@ torch >= 1.9.0
 torchaudio >= 0.9.0
 torch-audiomentations==0.9.0
 SoundFile==0.10.3.post1
+msgpack
+msgpack-numpy
+wandb
+transformers
+lmdb
 [Optional] torch_xla == 1.9
 ```
 
 Additional dependencies include
 ```
+## needed for augmentations
 [WavAugment](https://github.com/facebookresearch/WavAugment)
+```
+
+## Running experiments
+
+### Setup
+* The only thing cfgs (such as the [efficientnet-b0 default cfg](cfgs/speechcommands/efficientnet-b0-leaf-default.cfg)) need is a path to the "meta_root" under data section. Meta dir needs to have file manifest for each split as well as a lbl_map. A sample meta dir for SpeechCommands can be found [here](https://drive.google.com/file/d/15lGCCC2zPRBol-fNSOQLWjN-Cc8a_yM8/view?usp=sharing)
+
+### Training
+To train a model on speechcommands, run the following:
+```
+python train.py --cfg_file cfgs/speechcommands/efficientnet-b0-leaf-default.cfg --expdir ./exps/scv2/efficientnet-b0_default_leaf_bs1x256_adam_warmupcosine_wd_1e-4_rs8881 --epochs 100 --num_workers 8 --log_steps 50 --random_seed 8881 --no_wandb
+```
+
+### Testing
+To evaluate the trained model, do
+```
+python test.py --test_csv_name ./speechcommands_v2_meta/test.csv --exp_dir ./exps/scv2/efficientnet-b0_default_leaf_bs1x256_adam_warmupcosine_wd_1e-4_rs8881 --meta_dir ./speechcommands_v2_meta
 ```
 
 ## Results
