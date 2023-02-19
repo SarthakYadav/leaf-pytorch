@@ -1,3 +1,13 @@
+import tensorflow as tf
+try:
+    # Disable all GPUS
+    tf.config.set_visible_devices([], 'GPU')
+    visible_devices = tf.config.get_visible_devices()
+    for device in visible_devices:
+        assert device.device_type != 'GPU'
+except:
+    # Invalid device or cannot modify virtual devices once initialized.
+    pass
 import os
 import datetime
 import copy
@@ -7,9 +17,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from utilities.data import packed_dataset
+# from utilities.data import packed_dataset
 from utilities.data.utils import _collate_fn_raw, _collate_fn_raw_multiclass
-from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms
+from utilities.data.raw_transforms import get_raw_transforms_v2, simple_supervised_transforms, leaf_supervised_transforms
 from utilities.config_parser import parse_config, get_data_info, get_config
 from models.classifier import Classifier
 from utilities.training_utils import setup_dataloaders, optimization_helper
@@ -106,11 +116,12 @@ def train(ARGS):
         val_tfs = get_raw_transforms_v2(False, val_clip_size, center_crop_val=True,
                                         sample_rate=ac['sample_rate'])
     else:
-        tr_tfs = simple_supervised_transforms(True, random_clip_size,
+        tr_tfs = leaf_supervised_transforms(True, random_clip_size,
                                               sample_rate=ac['sample_rate'])
-        val_tfs = simple_supervised_transforms(False, val_clip_size,
+        val_tfs = leaf_supervised_transforms(False, val_clip_size,
                                                sample_rate=ac['sample_rate'])
     if ARGS.use_packed_dataset:
+        from utilities.data import packed_dataset
         train_set = packed_dataset.PackedDataset(cfg['data']['train'],
                                                  cfg['data']['labels'],
                                                  cfg['audio_config'],
