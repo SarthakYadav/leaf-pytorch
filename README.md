@@ -5,6 +5,7 @@
 - [About](#about) 
 - [Key Points](#key-points) 
 - [Dependencies](#dependencies) 
+- [Running experiments](#running-experiments)
 - [Results](#results) 
 - [Loading Pretrained Models](#loading-pretrained-models)
 - [References](#references)
