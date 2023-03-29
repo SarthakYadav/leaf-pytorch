@@ -29,8 +29,6 @@ This implementation supports training on TPUs using `torch-xla`.
 * Currently, `torch-xla` has some issues with certain `complex64` operations: `torch.view_as_real(comp)`, `comp.real`, `comp.imag` as highlighted in [#Issue 3070](https://github.com/pytorch/xla/issues/3070). 
 These are used primarily for generating gabor impulse responses. To bypass this shortcoming, an alternate implementation using manual complex number operations is provided.
 * Matched performance on SpeechCommands, experiments on other datasets ongoing
-* More details for commands to replicate experiments will be added shortly
-
 
 ## Dependencies
 ```
@@ -128,4 +126,15 @@ frontend = model.features
 }
 ``` 
 
-Please also consider citing this implementation using the citation widget in the sidebar.
+Please also consider citing this implementation using the following bibtex or from the citation widget on the sidebar.
+
+```
+@software{Yadav_leaf-pytorch_2021,
+author = {Yadav, Sarthak},
+month = {12},
+title = {{leaf-pytorch}},
+version = {0.0.1},
+year = {2021}
+}
+```
+
